@@ -14,7 +14,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
         with:
-          fetch-depth: 0
+          fetch-depth: 0  # Shallow clones should be disabled for better analysis
 
       - name: SonarQube Scan
         uses: sonarsource/sonarqube-scan-action@master
@@ -35,8 +35,16 @@ jobs:
           aws-region: us-east-1
 
       - name: Docker build and push to ECR
-        run: |
           aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/c3v1w0b3
-          docker build -t my-repo -f deployment-using-github-actions/Dockerfile deployment-using-github-actions/
+          docker build -t my-repo .
           docker tag my-repo:latest public.ecr.aws/c3v1w0b3/my-repo:latest
           docker push public.ecr.aws/c3v1w0b3/my-repo:latest
+        env:
+          DOCKER_CLI_ACI: 1
+
+      # Optional: Fail the job if SonarQube Quality Gate is red
+      # - name: SonarQube Quality Gate Check
+      #   uses: sonarsource/sonarqube-quality-gate-action@master
+      #   timeout-minutes: 5
+      #   env:
+      #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
